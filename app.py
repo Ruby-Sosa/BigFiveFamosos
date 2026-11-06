@@ -62,7 +62,6 @@ nombres = {
 
 col_preguntas, col_resultados = st.columns([1, 1.2], gap="large")
 
-
 with col_preguntas:
 
     st.header("📝 Test de personalidad")
@@ -77,7 +76,7 @@ with col_preguntas:
 
     with st.form("test_bigfive"):
 
-        st.subheader("1. Apertura a la experiencia (OP)")
+        st.markdown("**1. Apertura a la experiencia (OP)**")
 
         op_val = st.slider(
             "Me gusta probar cosas nuevas y aprender sobre temas diferentes.",
@@ -87,9 +86,7 @@ with col_preguntas:
             key="op"
         )
 
-        st.divider()
-
-        st.subheader("2. Responsabilidad (CO)")
+        st.markdown("**2. Responsabilidad (CO)**")
 
         co_val = st.slider(
             "Soy una persona organizada y cumplo con mis responsabilidades.",
@@ -99,9 +96,7 @@ with col_preguntas:
             key="co"
         )
 
-        st.divider()
-
-        st.subheader("3. Extroversión (EX)")
+        st.markdown("**3. Extroversión (EX)**")
 
         ex_val = st.slider(
             "Disfruto convivir con otras personas y participar en actividades sociales.",
@@ -111,9 +106,7 @@ with col_preguntas:
             key="ex"
         )
 
-        st.divider()
-
-        st.subheader("4. Amabilidad (AG)")
+        st.markdown("**4. Amabilidad (AG)**")
 
         ag_val = st.slider(
             "Me gusta ayudar a los demás y trabajar en equipo.",
@@ -123,9 +116,7 @@ with col_preguntas:
             key="ag"
         )
 
-        st.divider()
-
-        st.subheader("5. Neuroticismo (NE)")
+        st.markdown("**5. Neuroticismo (NE)**")
 
         ne_val = st.slider(
             "Con frecuencia me preocupo o me siento nervioso ante diferentes situaciones.",
@@ -134,8 +125,6 @@ with col_preguntas:
             value=50,
             key="ne"
         )
-
-        st.divider()
 
         enviar = st.form_submit_button(
             "🧠 Asignar mi clúster",
