@@ -5,17 +5,17 @@ import numpy as np
 import joblib
 import matplotlib.pyplot as plt
 
+
 st.set_page_config(
     page_title="Test de Personalidad Big Five",
     page_icon="🧠",
     layout="wide"
 )
 
-st.title("🧠 Test de Personalidad Big Five (OCEAN)")
-
+st.title("🧠 Clasificador de Personalidad Big Five")
 st.write(
-    "Contesta las siguientes preguntas para conocer tus características "
-    "de personalidad, obtener tu clúster y compararte con personas famosas."
+    "Descubre tu grupo de personalidad mediante el modelo "
+    "de aprendizaje no supervisado K-Means."
 )
 
 @st.cache_data
@@ -39,20 +39,19 @@ except Exception as e:
 
 features = ["op", "co", "ex", "ag", "ne"]
 
-# Verificar que existan las columnas necesarias
 if not all(col in df.columns for col in features):
-    st.error("El dataset no contiene todas las características Big Five.")
+    st.error("Faltan columnas necesarias en el dataset.")
     st.stop()
 
-# Asignar clústeres si el dataset no los contiene
+# Asignar clústeres si no existen
 if "cluster" not in df.columns:
     df_scaled = scaler.transform(df[features])
     df["cluster"] = kmeans.predict(df_scaled)
 
-# Convertir etiquetas de clúster a números
 df["cluster"] = pd.to_numeric(df["cluster"], errors="coerce")
 
-# Nombres de las características
+df = df.dropna(subset=["cluster"])
+
 nombres = {
     "op": "Apertura a la experiencia",
     "co": "Responsabilidad",
@@ -61,92 +60,102 @@ nombres = {
     "ne": "Neuroticismo"
 }
 
-st.header("📝 Contesta las 5 preguntas")
+col_preguntas, col_resultados = st.columns([1, 1.2], gap="large")
 
-st.write(
-    "Selecciona qué tanto te identificas con cada afirmación. "
-    "No hay respuestas correctas o incorrectas."
-)
 
-opciones = [
-    "1 - Totalmente en desacuerdo",
-    "2 - En desacuerdo",
-    "3 - Neutral",
-    "4 - De acuerdo",
-    "5 - Totalmente de acuerdo"
-]
+with col_preguntas:
 
-with st.form("test_bigfive"):
+    st.header("📝 Test de personalidad")
 
-    st.subheader("1. Apertura a la experiencia (OP)")
-    op = st.radio(
-        "Me gusta probar cosas nuevas y aprender sobre temas diferentes.",
-        opciones,
-        index=2
+    st.write(
+        "Indica qué tanto te identificas con cada afirmación."
     )
 
-    st.divider()
-
-    st.subheader("2. Responsabilidad (CO)")
-    co = st.radio(
-        "Soy una persona organizada y cumplo con mis responsabilidades.",
-        opciones,
-        index=2
+    st.caption(
+        "0 = Totalmente en desacuerdo | 100 = Totalmente de acuerdo"
     )
 
-    st.divider()
+    with st.form("test_bigfive"):
 
-    st.subheader("3. Extroversión (EX)")
-    ex = st.radio(
-        "Disfruto convivir con otras personas y participar en actividades sociales.",
-        opciones,
-        index=2
-    )
+        st.subheader("1. Apertura a la experiencia (OP)")
 
-    st.divider()
+        op_val = st.slider(
+            "Me gusta probar cosas nuevas y aprender sobre temas diferentes.",
+            min_value=0,
+            max_value=100,
+            value=50,
+            key="op"
+        )
 
-    st.subheader("4. Amabilidad (AG)")
-    ag = st.radio(
-        "Me gusta ayudar a los demás y trabajar en equipo.",
-        opciones,
-        index=2
-    )
+        st.divider()
 
-    st.divider()
+        st.subheader("2. Responsabilidad (CO)")
 
-    st.subheader("5. Neuroticismo (NE)")
-    ne = st.radio(
-        "Con frecuencia me preocupo o me siento nervioso ante diferentes situaciones.",
-        opciones,
-        index=2
-    )
+        co_val = st.slider(
+            "Soy una persona organizada y cumplo con mis responsabilidades.",
+            min_value=0,
+            max_value=100,
+            value=50,
+            key="co"
+        )
 
-    st.divider()
+        st.divider()
 
-    enviar = st.form_submit_button(
-        "🧠 Asignar mi clúster",
-        type="primary",
-        use_container_width=True
-    )
+        st.subheader("3. Extroversión (EX)")
+
+        ex_val = st.slider(
+            "Disfruto convivir con otras personas y participar en actividades sociales.",
+            min_value=0,
+            max_value=100,
+            value=50,
+            key="ex"
+        )
+
+        st.divider()
+
+        st.subheader("4. Amabilidad (AG)")
+
+        ag_val = st.slider(
+            "Me gusta ayudar a los demás y trabajar en equipo.",
+            min_value=0,
+            max_value=100,
+            value=50,
+            key="ag"
+        )
+
+        st.divider()
+
+        st.subheader("5. Neuroticismo (NE)")
+
+        ne_val = st.slider(
+            "Con frecuencia me preocupo o me siento nervioso ante diferentes situaciones.",
+            min_value=0,
+            max_value=100,
+            value=50,
+            key="ne"
+        )
+
+        st.divider()
+
+        enviar = st.form_submit_button(
+            "🧠 Asignar mi clúster",
+            type="primary",
+            use_container_width=True
+        )
 
 if enviar:
 
-    # Convertir respuestas de 1-5 a escala de 0-100
-    def convertir_puntaje(respuesta):
-        numero = int(respuesta.split(" - ")[0])
-        return (numero - 1) * 25
-
-    puntajes = {
-        "op": convertir_puntaje(op),
-        "co": convertir_puntaje(co),
-        "ex": convertir_puntaje(ex),
-        "ag": convertir_puntaje(ag),
-        "ne": convertir_puntaje(ne)
-    }
-
-    input_data = pd.DataFrame([puntajes], columns=features)
+    # Obtener los cinco valores
+    input_data = pd.DataFrame([{
+        "op": op_val,
+        "co": co_val,
+        "ex": ex_val,
+        "ag": ag_val,
+        "ne": ne_val
+    }], columns=features)
 
     try:
+        # Escalar los valores y realizar predicción
         input_scaled = scaler.transform(input_data)
         assigned_cluster = kmeans.predict(input_scaled)[0]
 
@@ -154,75 +163,73 @@ if enviar:
         st.error(f"Error al realizar la predicción: {e}")
         st.stop()
 
-    # Obtener los famosos del clúster
+    # Obtener famosos del clúster
     famosos_cluster = df[df["cluster"] == assigned_cluster].copy()
 
-    # Calcular promedio de características
+    # Calcular promedios del clúster
     if famosos_cluster.empty:
-        st.warning(
-            "No se encontraron famosos registrados para este clúster."
+        st.error(
+            "No se encontraron personas en el dataset "
+            "para el clúster asignado."
         )
         st.stop()
 
     promedios = famosos_cluster[features].mean()
 
+    with col_resultados:
+
+        st.header("🎯 Tu resultado")
+
+        st.success(
+            f"¡Perteneces al CLÚSTER {assigned_cluster}!"
+        )
+
+        st.subheader("📌 Descripción del clúster")
+
+        # Identificar rasgos predominantes
+        rasgos = promedios.sort_values(ascending=False)
+
+        rasgo_mayor = nombres[rasgos.index[0]]
+        rasgo_menor = nombres[rasgos.index[-1]]
+
+        st.write(
+            f"Este grupo presenta un promedio más alto en "
+            f"**{rasgo_mayor}** y un promedio más bajo en "
+            f"**{rasgo_menor}**."
+        )
+
+        st.write(
+            "Estos resultados representan las características "
+            "generales del grupo y no definen completamente "
+            "la personalidad de cada persona."
+        )
+
+        st.subheader("📊 Características del clúster")
+
+        fig_bar, ax_bar = plt.subplots(figsize=(8, 4.5))
+
+        valores_barra = promedios.rename(index=nombres)
+        valores_barra = valores_barra.sort_values()
+
+        ax_bar.barh(
+            valores_barra.index,
+            valores_barra.values
+        )
+
+        ax_bar.set_xlabel("Puntaje promedio")
+        ax_bar.set_title(
+            f"Características del Clúster {assigned_cluster}"
+        )
+        ax_bar.set_xlim(0, 100)
+        ax_bar.grid(axis="x", linestyle="--", alpha=0.3)
+
+        st.pyplot(fig_bar, use_container_width=True)
+        plt.close(fig_bar)
+
+
     st.divider()
-    st.header("🎯 Resultado de tu personalidad")
 
-    st.success(
-        f"¡Tu personalidad ha sido asignada al CLÚSTER {assigned_cluster}!"
-    )
-
-    st.subheader("📌 Descripción de tu clúster")
-
-    rasgos_ordenados = promedios.sort_values(ascending=False)
-
-    nombres_cortos = {
-        "op": "Apertura a la experiencia",
-        "co": "Responsabilidad",
-        "ex": "Extroversión",
-        "ag": "Amabilidad",
-        "ne": "Neuroticismo"
-    }
-
-    rasgo_mayor = nombres_cortos[rasgos_ordenados.index[0]]
-    rasgo_menor = nombres_cortos[rasgos_ordenados.index[-1]]
-
-    st.write(
-        f"Este clúster se caracteriza principalmente por presentar "
-        f"un nivel mayor de **{rasgo_mayor}** y un nivel menor de "
-        f"**{rasgo_menor}**, de acuerdo con los promedios de sus integrantes."
-    )
-
-    st.write(
-        "Estas características representan tendencias generales del grupo "
-        "y no definen completamente la personalidad de una persona."
-    )
-
-    st.subheader("📊 Características predominantes del clúster")
-
-    fig_bar, ax_bar = plt.subplots(figsize=(9, 5))
-
-    valores = promedios.rename(index=nombres)
-
-    valores.sort_values().plot(
-        kind="barh",
-        ax=ax_bar
-    )
-
-    ax_bar.set_title(
-        f"Promedio de personalidad del Clúster {assigned_cluster}"
-    )
-    ax_bar.set_xlabel("Puntaje promedio (0 a 100)")
-    ax_bar.set_ylabel("Características Big Five")
-    ax_bar.set_xlim(0, 100)
-    ax_bar.grid(axis="x", linestyle="--", alpha=0.4)
-
-    st.pyplot(fig_bar)
-    plt.close(fig_bar)
-
-
-    st.subheader(
+    st.header(
         f"👥 Top 5 de famosos del Clúster {assigned_cluster}"
     )
 
@@ -231,7 +238,8 @@ if enviar:
         columnas = ["usuario"]
 
         if "categoria" in famosos_cluster.columns:
-            categoria_mapping = {
+
+            categorias = {
                 1: "Actor/actriz",
                 2: "Cantante",
                 3: "Modelo",
@@ -244,7 +252,7 @@ if enviar:
             }
 
             famosos_cluster["categoria_nombre"] = (
-                famosos_cluster["categoria"].map(categoria_mapping)
+                famosos_cluster["categoria"].map(categorias)
             )
 
             columnas.append("categoria_nombre")
@@ -270,32 +278,37 @@ if enviar:
         )
 
     else:
-        st.warning("No se encontró la columna 'usuario' en el dataset.")
+        st.warning(
+            "No se encontró la columna de famosos en el dataset."
+        )
 
-    st.subheader("🕸️ Comparación de personalidad")
+
+    st.divider()
+
+    st.header("🕸️ Comparación de personalidad")
 
     st.write(
         "Compara tus resultados con el promedio de los famosos "
-        "pertenecientes a tu clúster."
+        "que pertenecen a tu mismo clúster."
     )
 
-    categorias = ["OP", "CO", "EX", "AG", "NE"]
+    categorias_radar = ["OP", "CO", "EX", "AG", "NE"]
 
     valores_usuario = [
-        puntajes["op"],
-        puntajes["co"],
-        puntajes["ex"],
-        puntajes["ag"],
-        puntajes["ne"]
+        op_val,
+        co_val,
+        ex_val,
+        ag_val,
+        ne_val
     ]
 
     valores_cluster = promedios[features].tolist()
 
-    # Cerrar el radar
+    # Cerrar las figuras
     valores_usuario += valores_usuario[:1]
     valores_cluster += valores_cluster[:1]
 
-    N = len(categorias)
+    N = len(categorias_radar)
 
     angulos = [
         n / float(N) * 2 * np.pi
@@ -309,6 +322,7 @@ if enviar:
         subplot_kw=dict(polar=True)
     )
 
+    # Promedio del clúster
     ax.plot(
         angulos,
         valores_cluster,
@@ -322,6 +336,7 @@ if enviar:
         alpha=0.20
     )
 
+    # Resultados del usuario
     ax.plot(
         angulos,
         valores_usuario,
@@ -336,7 +351,7 @@ if enviar:
     )
 
     ax.set_xticks(angulos[:-1])
-    ax.set_xticklabels(categorias)
+    ax.set_xticklabels(categorias_radar)
 
     ax.set_ylim(0, 100)
     ax.set_yticks([20, 40, 60, 80, 100])
@@ -351,15 +366,24 @@ if enviar:
         bbox_to_anchor=(1.3, 1.1)
     )
 
-    st.pyplot(fig_radar)
+    st.pyplot(fig_radar, use_container_width=True)
     plt.close(fig_radar)
-
 
     st.divider()
 
     st.caption(
-        "Este resultado es una clasificación generada mediante "
-        "un modelo de aprendizaje no supervisado K-Means. "
-        "La clasificación es orientativa y no representa un diagnóstico psicológico."
+        "Clasificación realizada mediante el algoritmo "
+        "K-Means de aprendizaje no supervisado. "
+        "Los resultados son orientativos y no representan "
+        "un diagnóstico psicológico."
     )
 
+else:
+
+    with col_resultados:
+        st.header("🎯 Tu resultado aparecerá aquí")
+
+        st.info(
+            "Contesta las cinco preguntas y presiona "
+            "'Asignar mi clúster' para conocer tu resultado."
+        )
